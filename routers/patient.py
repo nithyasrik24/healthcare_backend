@@ -15,7 +15,7 @@ import pdfplumber
 import re
 
 # Blockchain
-from blockchain import store_report_on_blockchain
+# from blockchain import store_report_on_blockchain 
 
 router = APIRouter(prefix="/patient", tags=["Patient"])
 
@@ -156,7 +156,7 @@ async def upload_report(
     file_hash = hashlib.sha256(file_bytes).hexdigest()
 
     # ================= STORE HASH ON BLOCKCHAIN =================
-    blockchain_tx_hash = store_report_on_blockchain(patient_id, file_hash)
+    # blockchain_tx_hash = store_report_on_blockchain(patient_id, file_hash)
 
     # ================= PDF TEXT EXTRACTION =================
     full_text = ""
