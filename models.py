@@ -52,7 +52,9 @@ class Doctor(Base):
     registration_number = Column(String)
     hospital_name = Column(String, nullable=False)
     is_approved = Column(Boolean, default=False)  # 👈 ADD THIS
-
+    license_file = Column(String, nullable=True)
+    degree_file = Column(String, nullable=True)
+    govt_id_file = Column(String, nullable=True)
     # Relationships
     appointments = relationship("Appointment", back_populates="doctor")
     prescriptions = relationship("Prescription", back_populates="doctor")

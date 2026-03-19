@@ -2,13 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Doctor, Patient, Appointment, Prescription, Report
-from fastapi import Form
+from fastapi import Form, UploadFile, File
 from schemas import DoctorCreate
 from datetime import datetime
+import os
 import uuid
 
 router = APIRouter(prefix="/doctor", tags=["Doctor"])
 
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     # ================= DATABASE =================
 def get_db():
@@ -19,50 +22,77 @@ def get_db():
             db.close()
 
 
+def save_file(file: UploadFile):
+    if not file:
+        return None
+    file_path = f"{UPLOAD_DIR}/{file.filename}"
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+    return "/" + file_path
+
     # =========================================================
     # 👨‍⚕️ REGISTER DOCTOR
     # =========================================================
 @router.post("/register")
-def register_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
+async def register_doctor(
+    full_name: str = Form(...),
+    email: str = Form(...),
+    mobile: str = Form(...),
+    password: str = Form(...),
+    specialization: str = Form(...),
+    registration_number: str = Form(...),
+    hospital_name: str = Form(...),
 
-        existing = db.query(Doctor).filter(
-            Doctor.email == doctor.email
-        ).first()
+    license_file: UploadFile = File(None),
+    degree_file: UploadFile = File(None),
+    govt_id_file: UploadFile = File(None),
 
-        if existing:
-            raise HTTPException(
-                status_code=400,
-                detail="Email already registered"
-            )
+    db: Session = Depends(get_db)
+):
 
-        doctor_id = "DOC-" + str(uuid.uuid4())[:8]
+    existing = db.query(Doctor).filter(
+        Doctor.email == email
+    ).first()
 
-        new_doctor = Doctor(
-            doctor_id=doctor_id,
-            full_name=doctor.full_name,
-            email=doctor.email,
-            mobile=doctor.mobile,
-            specialization=doctor.specialization,
-            registration_number=doctor.registration_number,
-            hospital_name=doctor.hospital_name,
-            password=doctor.password
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already exists")
 
-        )
+    doctor_id = "DOC-" + str(uuid.uuid4())[:8]
 
-        db.add(new_doctor)
-        db.commit()
-        db.refresh(new_doctor)
+    # SAVE FILES
+    license_path = save_file(license_file)
+    degree_path = save_file(degree_file)
+    id_path = save_file(govt_id_file)
 
-        return {
-            "message": "Doctor registered successfully",
-            "doctor_id": new_doctor.doctor_id,
-            "full_name": new_doctor.full_name
-        }
+    new_doctor = Doctor(
+        doctor_id=doctor_id,
+        full_name=full_name,
+        email=email,
+        mobile=mobile,
+        password=password,
+        specialization=specialization,
+        registration_number=registration_number,
+        hospital_name=hospital_name,
+
+        # 🔥 IMPORTANT
+        license_file=license_path,
+        degree_file=degree_path,
+        govt_id_file=id_path
+    )
+
+    db.add(new_doctor)
+    db.commit()
+    db.refresh(new_doctor)
+
+    return {
+        "message": "Doctor registered successfully",
+        "doctor_id": doctor_id
+    }
 
 
-    # =========================================================
-    # 👤 DOCTOR PROFILE
-    # =========================================================
+# =========================================================
+# 👤 DOCTOR PROFILE
+# =========================================================
 @router.get("/profile/{doctor_id}")
 def get_doctor_profile(doctor_id: str, db: Session = Depends(get_db)):
 
@@ -84,9 +114,9 @@ def get_doctor_profile(doctor_id: str, db: Session = Depends(get_db)):
         }
 
 
-    # =========================================================
-    # 📊 DASHBOARD SUMMARY
-    # =========================================================
+# =========================================================
+# 📊 DASHBOARD SUMMARY
+# =========================================================
 @router.get("/dashboard/{doctor_id}")
 def doctor_dashboard(doctor_id: str, db: Session = Depends(get_db)):
 
@@ -129,10 +159,9 @@ def doctor_dashboard(doctor_id: str, db: Session = Depends(get_db)):
             "emergency_cases": emergency_cases
         }
 
-
-    # =========================================================
-    # ⏳ PENDING APPOINTMENTS
-    # =========================================================
+# =========================================================
+# ⏳ PENDING APPOINTMENTS
+# =========================================================
 @router.get("/pending-appointments/{doctor_id}")
 def get_pending_appointments(doctor_id: str, db: Session = Depends(get_db)):
 
@@ -160,9 +189,9 @@ def get_pending_appointments(doctor_id: str, db: Session = Depends(get_db)):
 
         return result
 
-    # =========================================================
-    # 📅 TODAY CONFIRMED APPOINTMENTS
-    # =========================================================
+# =========================================================
+# 📅 TODAY CONFIRMED APPOINTMENTS
+# =========================================================
 @router.get("/today-appointments/{doctor_id}")
 def get_today_appointments(doctor_id: str, db: Session = Depends(get_db)):
 
@@ -194,9 +223,9 @@ def get_today_appointments(doctor_id: str, db: Session = Depends(get_db)):
         return result
 
 
-    # =========================================================
-    # 🚨 EMERGENCY PATIENTS
-    # =========================================================
+# =========================================================
+# 🚨 EMERGENCY PATIENTS
+# =========================================================
 @router.get("/emergencies/{doctor_id}")
 def emergency_cases(doctor_id: str, db: Session = Depends(get_db)):
 

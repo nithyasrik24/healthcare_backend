@@ -117,7 +117,12 @@ def list_doctors(db: Session = Depends(get_db)):
             "specialization": d.specialization,
             "hospital_name": d.hospital_name,
             "email": d.email,
-            "is_approved": d.is_approved
+            "is_approved": d.is_approved,
+
+            # 🔥 ADD THIS
+            "license_file": d.license_file,
+            "degree_file": d.degree_file,
+            "govt_id_file": d.govt_id_file
         }
         for d in doctors
     ]
