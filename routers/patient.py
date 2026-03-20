@@ -240,7 +240,7 @@ async def upload_report(
 
     return {
         "message": "Report uploaded successfully",
-        "blockchain_tx_hash": blockchain_tx_hash
+      #  "blockchain_tx_hash": blockchain_tx_hash
     }
 
 

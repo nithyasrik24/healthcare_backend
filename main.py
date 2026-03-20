@@ -5,7 +5,8 @@ from models import Base
 from routers import patient, doctor, login
 from routers import appointment, admin
 from fastapi.staticfiles import StaticFiles
-from blockchain import store_report_on_blockchain 
+from blockchain import app
+
 import hashlib
 
 
