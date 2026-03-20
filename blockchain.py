@@ -133,10 +133,10 @@ def store_api():
 
     tx = store_report(patient_id, report_hash)
 
-    return jsonify({
-        "status": "success",
-        "txHash": tx
-    })
+    if tx:
+        return jsonify({"status": "success", "txHash":tx})
+    else:
+        return jsonify({"status": "error"}),500
 
 @app.route('/get/<int:index>', methods=['GET'])
 def get_api(index):
